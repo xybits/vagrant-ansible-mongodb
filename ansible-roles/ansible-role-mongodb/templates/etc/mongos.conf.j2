@@ -1,0 +1,18 @@
+# http://docs.mongodb.org/manual/reference/configuration-options/
+
+systemLog:
+  destination: file
+  logAppend: true
+  path: {{ mongo_log_dir }}/mongos.log
+
+processManagement:
+  fork: true
+  pidFilePath: {{ mongo_run_dir }}/mongos.pid
+  timeZoneInfo: /usr/share/zoneinfo
+
+net:
+  port: {{ mongos_port }}
+  bindIp: {{ inventory_hostname }}
+
+sharding:
+  configDB: {{ mongoc_replica_set }}/{{ groups.mongo_config_servers | map( 'regex_replace', '(.*)', '\\1:' ~ mongoc_port ) | list | join( ',' ) }}

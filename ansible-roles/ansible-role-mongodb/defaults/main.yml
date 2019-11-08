@@ -1,0 +1,43 @@
+---
+
+# - Install -
+mongodb_version: 4.2
+mongodb_packages:
+  - bc
+  - libselinux-python
+  - mongodb-org
+  - python-pip
+
+# - Ports -
+# 27017 > The default port for mongod and mongos instances. You can change this port with port or --port.
+mongos_port: 27017
+# 27018 > The default port for mongod when running with --shardsvr command-line option
+#         or the shardsvr value for the clusterRole setting in a configuration file.
+mongod_port: 27018
+# 27019 > The default port for mongod when running with --configsvr command-line option
+#         or the configsvr value for the clusterRole setting in a configuration file.
+mongoc_port: 27019
+
+# - Network Interface -
+mongo_iface: "{{ ansible_default_ipv4.interface }}"
+
+# - Data Directory -
+mongo_data_dir: /opt/mongo
+mongo_log_dir:  /var/log/mongo
+mongo_run_dir:  /var/run/mongo
+
+# - Other configs -
+# The chunk size for shards in MB
+mongos_chunk_size: 1
+mongod_replica_set: rsd0
+mongod_secret_key: ~
+mongoc_replica_set: rsc0
+mnongoc_secret_key: ~
+
+# Password for admin user
+mongo_admin_pass: ~
+
+# - Cluster/Replication configuration -
+#mongo_roles: [ "shard", "config", "query" ]
+mongo_role: "shard"
+

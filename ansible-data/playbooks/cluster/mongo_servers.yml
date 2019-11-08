@@ -1,0 +1,6 @@
+---
+
+- import_playbook: shard_servers.yml
+- import_playbook: config_servers.yml
+- import_playbook: query_servers.yml
+

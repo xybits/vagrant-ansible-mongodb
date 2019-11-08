@@ -1,0 +1,7 @@
+---
+
+- hosts: mongo_config_servers
+  become: true
+  roles:
+    - { role: ansible-role-mongodb, vars: { mongo_role: "config" } }
+

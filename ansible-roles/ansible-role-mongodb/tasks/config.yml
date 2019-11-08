@@ -1,0 +1,25 @@
+---
+
+- name: config > MongoDB directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    group: mongod
+    owner: mongod
+  with_items:
+    - "{{ mongo_data_dir }}"
+    - "{{ mongo_log_dir }}"
+    - "{{ mongo_run_dir }}"
+
+- name: config > MongoDB Database Shard Server
+  include_tasks: config_mongod.yml
+  when: mongo_role == "shard"
+
+- name: config > MongoDB Configuration Server
+  include_tasks: config_mongoc.yml
+  when: mongo_role == "config"
+
+- name: config > MongoDB Query Server
+  include_tasks: config_mongos.yml
+  when: mongo_role == "query"
+

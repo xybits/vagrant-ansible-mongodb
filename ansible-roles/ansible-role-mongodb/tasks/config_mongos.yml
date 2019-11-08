@@ -1,0 +1,61 @@
+---
+
+- name: config_mongos > MongoDB Query Server
+  block:
+
+    - name: config_mongos > MongoDB conf
+      template:
+        src: etc/mongos.conf.j2
+        dest: /etc/mongos.conf
+        group: mongod
+        owner: mongod
+        mode: 0644
+      register: mongo_conf_
+
+    - name: config_mongos > MongoDB syconfig
+      template:
+        src: etc/sysconfig/mongos.j2
+        dest: /etc/sysconfig/mongos.j2
+        mode: 0644
+      register: mongo_sysconfig_
+
+    - name: config_mongos > MongoDB service
+      template:
+        src: usr/lib/systemd/system/mongos.service.j2
+        dest: /usr/lib/systemd/system/mongos.service
+        mode: 0644
+      register: mongo_service_
+
+    - name: config_mongos > Restart mongos service
+      systemd:
+        name: mongos
+        state: restarted
+        daemon_reload: true
+      when: >
+        mongo_conf_      is defined and mongo_conf_      is changed  or
+        mongo_sysconfig_ is defined and mongo_sysconfig_ is changed  or
+        mongo_service_   is defined and mongo_service_   is changed
+
+    - name: config_mongos > Ensure mongos service started
+      systemd:
+        name: mongos
+        enabled: true
+        state: started
+
+    - name: config_mongos > Wait for mongos_port to become available
+      wait_for:
+        host: "{{ inventory_hostname }}"
+        port: "{{ mongos_port | int }}"
+        delay: 5
+        timeout: 30
+
+    - name: config_mongos > Add sharded replicaset to the mongos
+      mongodb_shard:
+        login_host: "{{ inventory_hostname }}"
+        login_port: "{{ mongos_port | int }}"
+        shard: "{{ mongod_replica_set ~ '/' ~ ( groups.mongo_shard_servers | first ) ~ ':' ~ mongod_port }}"
+        state: present
+
+  # end block:
+  when: inventory_hostname in groups.mongo_query_servers
+

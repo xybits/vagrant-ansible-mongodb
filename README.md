@@ -1,7 +1,7 @@
 
-# vagrant-multiservers
+# vagrant-ansible-mongodb
 
-Example of multiple servers orchestration with Vagrant, Ansible and Puppet
+Example of MongoDB sharded cluster with 3 database servers, 3 configuration servers and 1 query server.
 
 
 ## Prerequisites:
@@ -10,6 +10,7 @@ Download and install the following tools:
 
 - [VirtualBox & Extension Pack](https://www.virtualbox.org/wiki/Downloads)
 - [Vagrant](https://www.vagrantup.com/downloads.html)
+- [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html) 2.8+
 
 ## Running the code
 
@@ -17,18 +18,50 @@ Download and install the following tools:
   ```bash
   -:$ vagrant status
   ```
-- Instantiate the servers:
+
+- Instantiate servers:
    ```bash
-   -:$ vagrant up server1 server2
+   -:$ vagrant up --provision mongo{01,02,03,04}
    ```
-- Verify the instances:
-   ```bash
-   -:$ vagrant ssh server1 -- "hostname && hostname -I"
-   -:$ vagrant ssh server2 -- "hostname && hostname -I"
-   ```
-- Test communication between servers:
-   ```bash
-   -:$ vagrant ssh server1 -- "ping -c 4 10.233.89.102"
-   -:$ vagrant ssh server2 -- "ping -c 4 10.233.89.101"
-   ```
+
+> Note: ensure that `mongo04` is created after all other vms are created. 
+
+## Ports Information
+
+|  Server                |  Process Name  |  Port   |
+| ---------------------- | -------------- | ------- |
+|  Query Server          |  mongos        |  27017  |  
+|  Database Server       |  mongod        |  27018  |
+|  Configuration Server  |  mongoc        |  27019  |
+
+## Servers Information
+
+```text
+# Query server:
+ - 192.168.53.104
+
+# Database servers:
+ - 192.168.53.101
+ - 192.168.53.102
+ - 192.168.53.103
+
+# Configuration servers:
+ - 192.168.53.101
+ - 192.168.53.102
+ - 192.168.53.103
+```
+
+## Connect to the Query Server
+
+  ```bash
+  # Connect to the mongos instance in the query server
+  -:$ vagrant ssh mongo04 -- -t "mongo --host 192.168.53.104 --port 27017"
+  mongos>
+  
+  # Check shard status
+  mongos> sh.status()
+
+  # Exit
+  mongos> quit()
+  ```
 

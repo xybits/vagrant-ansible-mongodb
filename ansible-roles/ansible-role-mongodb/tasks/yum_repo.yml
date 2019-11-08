@@ -1,0 +1,18 @@
+---
+
+- name: yum > MongoDB Community Edition
+  yum_repository:
+    name: mongodb-ce-{{ mongodb_version }}
+    description: MongoDB-$releasever - Community Edition
+    file: MongoDB-CE
+    baseurl: https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/{{ mongodb_version }}/$basearch/
+    enabled: yes
+    gpgcheck: yes
+    gpgkey: https://www.mongodb.org/static/pgp/server-{{ mongodb_version }}.asc
+
+- name: yum > EPEL
+  yum:
+    name: epel-release
+    state: present
+    update_cache: true
+

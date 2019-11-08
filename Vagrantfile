@@ -1,33 +1,37 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-PREFERRED_BOX = 'centos7'
 DOMAIN_NAME = 'xybits.vagrant'
-BOXES = {
-  :centos6    => {
-    :box_name => 'centos/6',
-    :memory   => 1024,
-    :cpus     => 1,
-  },
-  :centos7    => {
-    :box_name => 'centos/7',
-    :memory   => 1024,
-    :cpus     => 1,
-  },
+SERVER = {
+  # Base Specification
+  :box_name => 'centos/7',
+  :memory   => 1024,
+  :cpus     => 1,
+  # Ansible Specification
+  :roles_path => 'ansible-roles/',
+  :inventory  => 'ansible-data/inventories/cluster/hosts.yml',
+  :playbook   => 'ansible-data/playbooks/cluster/mongo_servers.yml',
 }
 
 INSTANCES  = {
-  :server1 => {
-    :private_ip => '10.233.89.101',
+  :mongo01 => {
+    :private_ip => '192.168.53.101',
   },
-  :server2 => {
-    :private_ip => '10.233.89.102',
+  :mongo02 => {
+    :private_ip => '192.168.53.102',
+  },
+  :mongo03 => {
+    :private_ip => '192.168.53.103',
+  },
+  :mongo04 => {
+    :private_ip => '192.168.53.104',
+    :memory   => 512,
   },
 }
 
 servers = Hash.new
 INSTANCES.each do |server, spec|
-  servers["#{server}"] = BOXES[:"#{PREFERRED_BOX}"].merge(spec)
+  servers["#{server}"] = SERVER.merge(spec)
 end
 
 Vagrant.configure("2") do |config|
@@ -51,6 +55,15 @@ Vagrant.configure("2") do |config|
         vb.name   = full_name
         vb.memory = machine[:memory]
         vb.cpus   = machine[:cpus]
+      end
+
+      # Provision
+      node.vm.provision "ansible" do |ans|
+        ans.verbose  = "vv"
+        ans.limit    = machine[:private_ip]
+        ans.playbook = machine[:playbook]
+        ans.inventory_path    = machine[:inventory]
+        ans.galaxy_roles_path = machine[:roles_path]
       end
     end
   end

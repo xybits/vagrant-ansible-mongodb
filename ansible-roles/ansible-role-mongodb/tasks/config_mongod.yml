@@ -1,0 +1,80 @@
+---
+
+- name: config_mongod > MongoDB configuration
+  block:
+
+    - name: config_mongod > MongoDB data directory
+      file:
+        path: "{{ mongo_data_dir }}/data-mongod"
+        state: directory
+        group: mongod
+        owner: mongod
+        mode: 0755
+
+    - name: config_mongod > MongoDB secret
+      copy:
+        content: "{{ mongod_secret_key }}"
+        dest: "{{ mongo_data_dir }}/secret-mongod"
+        group: mongod
+        owner: mongod
+        mode: 0400
+      register: mongo_secret_
+
+    - name: config_mongod > MongoDB conf
+      template:
+        src: etc/mongod.conf.j2
+        dest: /etc/mongod.conf
+        group: mongod
+        owner: mongod
+        mode: 0644
+      register: mongo_conf_
+
+    - name: config_mongod > MongoDB syconfig
+      template:
+        src: etc/sysconfig/mongod.j2
+        dest: /etc/sysconfig/mongod.j2
+        mode: 0644
+      register: mongo_sysconfig_
+
+    - name: config_mongod > MongoDB service
+      template:
+        src: usr/lib/systemd/system/mongod.service.j2
+        dest: /usr/lib/systemd/system/mongod.service
+        mode: 0644
+      register: mongo_service_
+
+    - name: config_mongod > Restart mongod service
+      systemd:
+        name: mongod
+        state: restarted
+        daemon_reload: true
+      when: >
+        mongo_secret_    is defined and mongo_secret_    is changed  or
+        mongo_conf_      is defined and mongo_conf_      is changed  or
+        mongo_sysconfig_ is defined and mongo_sysconfig_ is changed  or
+        mongo_service_   is defined and mongo_service_   is changed
+
+    - name: config_mongod > Ensure mongod service started
+      systemd:
+        name: mongod
+        enabled: true
+        state: started
+
+    - name: config_mongod > Wait for mongod_port to become available
+      wait_for:
+        host: "{{ inventory_hostname }}"
+        port: "{{ mongod_port | int }}"
+        delay: 5
+        timeout: 30
+
+    - name: config_mongod > Ensure replicaset exists
+      mongodb_replicaset:
+        login_host: "{{ inventory_hostname }}"
+        login_port: "{{ mongod_port | int }}"
+        replica_set: "{{ mongod_replica_set }}"
+        members: "{{ groups.mongo_shard_servers | map( 'regex_replace', '(.*)', '\\1:' ~ mongod_port ) | list }}"
+      when: inventory_hostname == (groups.mongo_shard_servers | last)
+
+  # end block:
+  when: inventory_hostname in groups.mongo_shard_servers
+

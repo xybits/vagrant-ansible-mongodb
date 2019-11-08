@@ -1,0 +1,14 @@
+---
+
+- name: install > MongoDB packages
+  yum:
+    name: "{{ mongodb_packages }}"
+    state: present
+    update_cache: true
+
+- name: install > pymongo
+  pip:
+    name: pymongo
+    state: latest
+    use_mirrors: false
+

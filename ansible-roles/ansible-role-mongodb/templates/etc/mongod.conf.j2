@@ -1,0 +1,29 @@
+# http://docs.mongodb.org/manual/reference/configuration-options/
+
+systemLog:
+  destination: file
+  logAppend: true
+  path: {{ mongo_log_dir }}/mongod.log
+
+storage:
+  dbPath: {{ mongo_data_dir }}/data-mongod
+  journal:
+    enabled: true
+
+processManagement:
+  fork: true
+  pidFilePath: {{ mongo_run_dir }}/mongod.pid
+  timeZoneInfo: /usr/share/zoneinfo
+
+net:
+  port: {{ mongod_port }}
+  bindIp: {{ inventory_hostname }}
+
+#security:
+#  keyFile: {{ mongo_data_dir }}/secret-mongod
+
+replication:
+  replSetName: {{ mongod_replica_set }}
+
+sharding:
+  clusterRole: "shardsvr"

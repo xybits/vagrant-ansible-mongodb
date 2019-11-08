@@ -1,0 +1,17 @@
+---
+
+- name: MongoDB YUM repository
+  include_tasks: yum_repo.yml
+
+- name: MongoDB SELinux
+  include_tasks: selinux.yml
+
+- name: MongoDB firewall
+  include_tasks: firewall.yml
+
+- name: MongoDB install
+  include_tasks: install.yml
+
+- name: MongoDB configuration
+  include_tasks: config.yml
+

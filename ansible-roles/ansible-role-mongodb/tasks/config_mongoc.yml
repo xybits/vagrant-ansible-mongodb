@@ -1,0 +1,96 @@
+---
+
+- name: config_mongoc > MongoDB Configuration Server
+  block:
+
+    - name: config_mongoc > MongoDB data directory
+      file:
+        path: "{{ mongo_data_dir }}/data-mongoc"
+        state: directory
+        group: mongod
+        owner: mongod
+        mode: 0755
+
+    - name: config_mongoc > MongoDB secret
+      copy:
+        content: "{{ mongoc_secret_key }}"
+        dest: "{{ mongo_data_dir }}/secret-mongoc"
+        group: mongod
+        owner: mongod
+        mode: 0400
+      register: mongo_secret_
+
+    - name: config_mongoc > MongoDB conf
+      template:
+        src: etc/mongoc.conf.j2
+        dest: /etc/mongoc.conf
+        group: mongod
+        owner: mongod
+        mode: 0644
+      register: mongo_conf_
+
+    - name: config_mongoc > MongoDB syconfig
+      template:
+        src: etc/sysconfig/mongoc.j2
+        dest: /etc/sysconfig/mongoc.j2
+        mode: 0644
+      register: mongo_sysconfig_
+
+    - name: config_mongoc > MongoDB service
+      template:
+        src: usr/lib/systemd/system/mongoc.service.j2
+        dest: /usr/lib/systemd/system/mongoc.service
+        mode: 0644
+      register: mongo_service_
+
+    - name: config_mongoc > Restart mongoc service
+      systemd:
+        name: mongoc
+        state: restarted
+        daemon_reload: true
+      when: >
+        mongo_secret_    is defined and mongo_secret_    is changed  or
+        mongo_conf_      is defined and mongo_conf_      is changed  or
+        mongo_sysconfig_ is defined and mongo_sysconfig_ is changed  or
+        mongo_service_   is defined and mongo_service_   is changed
+
+    - name: config_mongoc > Ensure mongoc service started
+      systemd:
+        name: mongoc
+        enabled: true
+        state: started
+
+    - name: config_mongoc > Wait for mongoc_port to become available
+      wait_for:
+        host: "{{ inventory_hostname }}"
+        port: "{{ mongoc_port | int }}"
+        delay: 5
+        timeout: 30
+
+    - name: config_mongoc > Ensure replicaset and admin user exist
+      block:
+
+        - name: config_mongoc > Ensure replicaset exists
+          mongodb_replicaset:
+            login_host: "{{ inventory_hostname }}"
+            login_port: "{{ mongoc_port | int }}"
+            replica_set: "{{ mongoc_replica_set }}"
+            members: "{{ groups.mongo_config_servers | map( 'regex_replace', '(.*)', '\\1:' ~ mongoc_port ) | list }}"
+
+        - name: config_mongoc > Ensure admin user exists
+          mongodb_user:
+            login_host: "{{ inventory_hostname }}"
+            login_port: "{{ mongoc_port | int }}"
+            replica_set: "{{ mongoc_replica_set }}"
+            database: admin
+            name: admin
+            password: "{{ mongo_admin_pass | default( 'admin', true ) }}"
+            update_password: always
+            state: present
+
+      # end block:
+      when: inventory_hostname == (groups.mongo_config_servers | last)
+
+  # end block:
+  when: inventory_hostname in groups.mongo_config_servers
+

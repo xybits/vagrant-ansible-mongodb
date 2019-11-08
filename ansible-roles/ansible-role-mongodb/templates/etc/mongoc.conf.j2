@@ -1,0 +1,29 @@
+# http://docs.mongodb.org/manual/reference/configuration-options/
+
+systemLog:
+  destination: file
+  logAppend: true
+  path: {{ mongo_log_dir }}/mongoc.log
+
+storage:
+  dbPath: {{ mongo_data_dir }}/data-mongoc
+  journal:
+    enabled: true
+
+processManagement:
+  fork: true
+  pidFilePath: {{ mongo_run_dir }}/mongoc.pid
+  timeZoneInfo: /usr/share/zoneinfo
+
+net:
+  port: {{ mongoc_port }}
+  bindIp: {{ inventory_hostname }}
+
+#security:
+#  keyFile: {{ mongo_data_dir }}/secret-mongoc
+
+replication:
+  replSetName: {{ mongoc_replica_set }}
+
+sharding:
+  clusterRole: "configsvr"

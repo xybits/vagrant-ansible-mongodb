@@ -1,0 +1,7 @@
+---
+
+- hosts: mongo_shard_servers
+  become: true
+  roles:
+    - { role: ansible-role-mongodb, vars: { mongo_role: "shard" } }
+
